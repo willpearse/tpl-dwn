@@ -34,20 +34,22 @@ if not Dir.exist? options[:tpl_dir]
   puts "Run ./tpl-dwn-syn.rb --help (or similar) to get options"
   exit(false)
 end
+if options[:tpl_dir][-1] != "/" then options[:tpl_dir] += "/" end
+
 if not Dir.exist? options[:output]
   puts "Must specify (existing) folder to store synonyms; exiting"
   puts "Run ./tpl-dwn-syn.rb --help (or similar) to get options"
   exit(false)
 end
+if options[:output][-1] != "/" then options[:output] += "/" end
 
 # Doing work
 Dir["#{options[:tpl_dir]}*.csv"].each do |tpl_file|
   if options[:verbose] then puts "Searching #{tpl_file}" end
-  CSV.open("#{options[:output]}/#{File.basename(tpl_file)}", "wb") do |output|
+  CSV.open("#{options[:output]}#{File.basename(tpl_file)}", "wb") do |output|
     output << ["accepted", "synonym", "status"]
     CSV.foreach("#{tpl_file}", headers: true) do |row|
       search_term = "#{row[4]}+#{row[6]}"
-      puts search_term
       species = search_term.sub("+", "_")
       page = Nokogiri::HTML(RestClient.get("http://www.theplantlist.org/tpl1.1/search?q=#{search_term}").body)
       page.xpath("//tr").each_with_index do |entry, i|
@@ -57,7 +59,6 @@ Dir["#{options[:tpl_dir]}*.csv"].each do |tpl_file|
         output << [species, synonym, status]
       end
       sleep options[:delay]
-      break
     end
   end
 end
