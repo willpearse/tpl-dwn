@@ -47,16 +47,16 @@ if options[:output][-1] != "/" then options[:output] += "/" end
 Dir["#{options[:tpl_dir]}*.csv"].each do |tpl_file|
   if options[:verbose] then puts "Searching #{tpl_file}" end
   CSV.open("#{options[:output]}#{File.basename(tpl_file)}", "wb") do |output|
-    output << ["accepted", "synonym", "status"]
+    output << ["id_accepted","accepted", "synonym", "status"]
     CSV.foreach("#{tpl_file}", headers: true) do |row|
-      search_term = "#{row[4]}+#{row[6]}"
-      species = search_term.sub("+", "_")
-      page = Nokogiri::HTML(RestClient.get("http://www.theplantlist.org/tpl1.1/search?q=#{search_term}").body)
+      species = "#{row[4]}_#{row[6]}"
+      id = row[0]
+      page = Nokogiri::HTML(open("http://www.theplantlist.org/tpl1.1/record/#{id}").read)
       page.xpath("//tr").each_with_index do |entry, i|
         if i == 0 then next end
         synonym = entry.element_children[0].text
         status = entry.element_children[1].text
-        output << [species, synonym, status]
+        output << [id, species, synonym, status]
       end
       sleep options[:delay]
     end
